@@ -1,0 +1,30 @@
+name: نشر التطبيق 🚀
+
+on:
+  push:
+    branches:
+      - main  # يتم تشغيله عند دفع تغييرات إلى الفرع الرئيسي
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: استنساخ المستودع
+        uses: actions/checkout@v3
+
+      - name: إعداد بيئة Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+
+      - name: تثبيت المتطلبات
+        run: |
+          pip install -r requirements.txt
+
+      - name: تشغيل الاختبارات
+        run: |
+          pytest tests/
+
+      - name: نشر التطبيق
+        run: |
+          bash deploy.sh

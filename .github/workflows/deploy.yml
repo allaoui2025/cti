@@ -1,0 +1,61 @@
+name: Build and Deploy Flask API & Static Web App to Kali
+
+on:
+  push:
+    branches: [ master ]  # أو `main` إذا كنت تستخدمه
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # ---- بناء التطبيق الأول (Flask API) ----
+      - name: Set up Docker for Flask API
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image for Flask API
+        run: docker build -f Dockerfile-flask -t flask-api:latest ./app_1
+
+      - name: Save Flask Docker image
+        run: docker save flask-api:latest -o flask-api.tar
+
+      - name: Copy Flask image to Kali server
+        run: |
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > key.pem
+          chmod 600 key.pem
+          scp -o StrictHostKeyChecking=no -i key.pem flask-api.tar user@YOUR_KALI_IP:/home/user/
+
+      - name: Deploy Flask API on Kali via SSH
+        run: |
+          ssh -o StrictHostKeyChecking=no -i key.pem user@YOUR_KALI_IP << 'EOF'
+            docker load -i /home/user/flask-api.tar
+            docker stop flask-api || true
+            docker rm flask-api || true
+            docker run -d --name flask-api -p 5000:5000 flask-api:latest
+          EOF
+
+      # ---- بناء التطبيق الثاني (Node.js + Static Web) ----
+      - name: Set up Docker for Node.js App
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image for Node.js App
+        run: docker build -f Dockerfile-node -t node-web-app:latest ./app_2
+
+      - name: Save Node.js Docker image
+        run: docker save node-web-app:latest -o node-web-app.tar
+
+      - name: Copy Node.js image to Kali server
+        run: |
+          scp -o StrictHostKeyChecking=no -i key.pem node-web-app.tar user@YOUR_KALI_IP:/home/user/
+
+      - name: Deploy Node.js Web App on Kali via SSH
+        run: |
+          ssh -o StrictHostKeyChecking=no -i key.pem user@YOUR_KALI_IP << 'EOF'
+            docker load -i /home/user/node-web-app.tar
+            docker stop node-web-app || true
+            docker rm node-web-app || true
+            docker run -d --name node-web-app -p 80:80 node-web-app:latest
+          EOF
