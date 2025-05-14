@@ -1,0 +1,30 @@
+name: DevSecOps Pipeline
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Run Maven Build
+      run: mvn clean install
+
+    - name: Run Semgrep Scan
+      run: semgrep --config=auto .
+
+    - name: Docker Image Build
+      run: docker build -t myapp .
+
+    - name: Scan Docker Image with Trivy
+      run: trivy image myapp
+
+    - name: Deploy Application
+      run: |
+        ssh user@yourserver "docker-compose up -d"
