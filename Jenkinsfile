@@ -14,12 +14,15 @@ pipeline {
             }
         }
 
-        stage('Static Analysis - Semgrep') {
+         stage('🧠 Semgrep Scan (Code Analysis)') {
             steps {
-                sh 'semgrep scan --config=auto .'
+                echo "🔍 Running Semgrep scan..."
+                sh '''
+                    pipx install semgrep || true
+                    ~/.local/bin/semgrep --config auto .
+                '''
             }
         }
-
         stage('Trivy Scan') {
             steps {
                 sh 'trivy fs .'
