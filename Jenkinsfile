@@ -1,9 +1,10 @@
 pipeline {
     agent any
+
     stages {
         stage('Checkout') {
             steps {
-                git 'https://github.com/your/repo.git'
+                git url: 'https://github.com/allaoui2025/cti.git', credentialsId: 'github-token'
             }
         }
 
@@ -15,20 +16,19 @@ pipeline {
 
         stage('Static Analysis - Semgrep') {
             steps {
-                sh 'semgrep --config=auto .'
+                sh 'semgrep scan --config=auto .'
             }
         }
 
         stage('Trivy Scan') {
             steps {
-                sh 'docker build -t myapp .'
-                sh 'trivy image myapp'
+                sh 'trivy fs .'
             }
         }
 
         stage('Deploy') {
             steps {
-                sh 'docker run -d -p 9090:8080 myapp'
+                echo 'Deploying...'
             }
         }
     }
